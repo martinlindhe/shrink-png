@@ -49,9 +49,12 @@ func main() {
 		log.Fatal("Error occured with pngcrush while processing", *inFile, ":", err)
 	}
 	outSizePngcrush := fileSize(tempFile)
-	diffSizePngcrush := inFileSize - outSizePngcrush
 	if *verbose {
-		fmt.Println("pngcrush:", inFileSize, "->", outSizePngcrush, "(saved", diffSizePngcrush, "bytes)")
+		diffSizePngcrush := inFileSize - outSizePngcrush
+		pctShrunkPngcrush := 100 - ((float64(outSizePngcrush) / float64(inFileSize)) * 100)
+		fmt.Printf("pngcrush: %d -> %d (shrunk by %d bytes, %0.1f%%)",
+			inFileSize, outSizePngcrush, diffSizePngcrush, pctShrunkPngcrush)
+		fmt.Println()
 	}
 
 	err = runCommand(optipngPath, "-o7", tempFile)
@@ -60,13 +63,19 @@ func main() {
 	}
 
 	outFileSize := fileSize(tempFile)
-	diffSizeOptipng := outSizePngcrush - outFileSize
 	if *verbose {
-		fmt.Println("optipng :", outSizePngcrush, "->", outFileSize, "(saved", diffSizeOptipng, "bytes)")
+		diffSizeOptipng := outSizePngcrush - outFileSize
+		pctShrunkOptipng := 100 - ((float64(outFileSize) / float64(outSizePngcrush)) * 100)
+		fmt.Printf("optipng: %d -> %d (shrunk by %d bytes, %0.1f%%)",
+			outSizePngcrush, outFileSize, diffSizeOptipng, pctShrunkOptipng)
+		fmt.Println()
 	}
 
 	diffSize := inFileSize - outFileSize
-	fmt.Println(*inFile+":", inFileSize, "->", outFileSize, "(saved", diffSize, "bytes)")
+	pctShrunk := 100 - ((float64(outFileSize) / float64(inFileSize)) * 100)
+	fmt.Printf("%s: %d -> %d (shrunk by %d bytes, %0.1f%%)",
+		*inFile, inFileSize, outFileSize, diffSize, pctShrunk)
+	fmt.Println()
 
 	if !*dry {
 		if *outFile == "" {
