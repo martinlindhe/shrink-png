@@ -7,7 +7,7 @@ Tool using pngcrush and optipng to optimize input PNG
 
 ### Installation
 
-First, you need pngcrush and optipng binaries
+First, you need to install `pngcrush` and `optipng`:
 
 Debian/Ubuntu:
 
