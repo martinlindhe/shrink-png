@@ -20,6 +20,10 @@ var (
 	verbose = kingpin.Flag("verbose", "Verbose").Short('v').Bool()
 )
 
+func init() {
+	log.SetFlags(log.Lshortfile)
+}
+
 func main() {
 
 	var err error
