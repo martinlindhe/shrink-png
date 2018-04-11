@@ -16,7 +16,6 @@ import (
 var (
 	inFile  = kingpin.Arg("in", "Input file").Required().String()
 	outFile = kingpin.Flag("out", "Output file (dont overwrite input)").Short('o').String()
-	dry     = kingpin.Flag("dry", "Dry-run").Bool()
 	verbose = kingpin.Flag("verbose", "Verbose").Short('v').Bool()
 )
 
@@ -25,9 +24,6 @@ func init() {
 }
 
 func main() {
-
-	var err error
-
 	// support -h for --help
 	kingpin.CommandLine.HelpFlag.Short('h')
 	kingpin.Parse()
@@ -37,78 +33,88 @@ func main() {
 	}
 
 	inFileSize := fileSize(*inFile)
-	tempFile := findFreeOutFileName(*inFile)
-
-	pngcrushPath, err := lookPath("pngcrush")
-	if err != nil {
-		log.Fatal(err)
+	if err := pngcrushCompress(*inFile); err != nil {
+		log.Println(err)
 	}
-	optipngPath, err := lookPath("optipng")
-	if err != nil {
-		log.Fatal(err)
+	if err := optipngCompress(*inFile); err != nil {
+		log.Println(err)
 	}
-
-	err = runCommand(pngcrushPath, "-s", "-brute", "-rem", "alla", *inFile, tempFile)
-	if err != nil {
-		log.Fatal("Error occured with pngcrush while processing", *inFile, ":", err)
-	}
-	outSizePngcrush := fileSize(tempFile)
-	if *verbose {
-		diffSizePngcrush := inFileSize - outSizePngcrush
-		pctShrunkPngcrush := 100 - ((float64(outSizePngcrush) / float64(inFileSize)) * 100)
-		fmt.Printf("pngcrush: %d -> %d (shrunk by %d bytes, %0.1f%%)",
-			inFileSize, outSizePngcrush, diffSizePngcrush, pctShrunkPngcrush)
-		fmt.Println()
-	}
-
-	err = runCommand(optipngPath, "-o7", tempFile)
-	if err != nil {
-		log.Fatal("Error occured with optipng while processing", *inFile, ":", err)
-	}
-
-	outFileSize := fileSize(tempFile)
-	if *verbose {
-		diffSizeOptipng := outSizePngcrush - outFileSize
-		pctShrunkOptipng := 100 - ((float64(outFileSize) / float64(outSizePngcrush)) * 100)
-		fmt.Printf("optipng: %d -> %d (shrunk by %d bytes, %0.1f%%)",
-			outSizePngcrush, outFileSize, diffSizeOptipng, pctShrunkOptipng)
-		fmt.Println()
-	}
+	outFileSize := fileSize(*inFile)
 
 	diffSize := inFileSize - outFileSize
 	pctShrunk := 100 - ((float64(outFileSize) / float64(inFileSize)) * 100)
 	fmt.Printf("%s: %d -> %d (shrunk by %d bytes, %0.1f%%)",
 		*inFile, inFileSize, outFileSize, diffSize, pctShrunk)
 	fmt.Println()
+}
 
-	if !*dry {
-		if *outFile == "" {
-			// overwrite input file
-			err = os.Remove(*inFile)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			err = os.Rename(tempFile, *inFile)
-			if err != nil {
-				log.Fatal(err)
-			}
-		} else {
-			// write to new file
-			fmt.Println("Writing to", *outFile)
-			err = os.Rename(tempFile, *outFile)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-	} else {
-		// if dry-run, remove temp file
-		err = os.Remove(tempFile)
-		if err != nil {
-			log.Fatal(err)
-		}
+func pngcrushCompress(file string) error {
+	inFileSize := fileSize(file)
+	pngcrushFile := findFreeOutFileName(file)
+	pngcrushPath, err := lookPath("pngcrush")
+	if err != nil {
+		return err
 	}
 
+	err = runCommand(pngcrushPath, "-s", "-brute", "-rem", "alla", file, pngcrushFile)
+	if err != nil {
+		return fmt.Errorf("pngcrush: error occured while processing", file, ":", err)
+	}
+	outSize := fileSize(pngcrushFile)
+	diffSize := inFileSize - outSize
+	pctShrunk := 100 - ((float64(outSize) / float64(inFileSize)) * 100)
+	if *verbose {
+		fmt.Printf("pngcrush: %d -> %d (shrunk by %d bytes, %0.1f%%)",
+			inFileSize, outSize, diffSize, pctShrunk)
+		fmt.Println()
+	}
+
+	if diffSize < 0 {
+		fmt.Println("pngcrush: throwing away non-shrunk file", pngcrushFile)
+		os.Remove(pngcrushFile)
+		return fmt.Errorf("file not shrunk")
+	}
+
+	err = os.Remove(file)
+	if err != nil {
+		return err
+	}
+	return os.Rename(pngcrushFile, file)
+}
+
+func optipngCompress(file string) error {
+	inFileSize := fileSize(file)
+	optipngPath, err := lookPath("optipng")
+	if err != nil {
+		return err
+	}
+
+	optipngFile := findFreeOutFileName(file)
+	err = runCommand(optipngPath, "-o7", "-out", optipngFile, file)
+	if err != nil {
+		return fmt.Errorf("optipng: error occured while processing %s: %v", file, err)
+	}
+
+	outSize := fileSize(optipngFile)
+	diffSize := inFileSize - outSize
+	pctShrunk := 100 - ((float64(outSize) / float64(inFileSize)) * 100)
+	if *verbose {
+		fmt.Printf("optipng: %d -> %d (shrunk by %d bytes, %0.1f%%)",
+			inFileSize, outSize, diffSize, pctShrunk)
+		fmt.Println()
+	}
+
+	if diffSize < 0 {
+		fmt.Println("optipng: throwing away non-shrunk file", optipngFile)
+		os.Remove(optipngFile)
+		return fmt.Errorf("file not shrunk")
+	}
+
+	err = os.Remove(file)
+	if err != nil {
+		return err
+	}
+	return os.Rename(optipngFile, file)
 }
 
 // exists reports whether the named file or directory exists.
@@ -153,7 +159,7 @@ func findFreeOutFileName(file string) string {
 }
 
 func runCommand(name string, arg ...string) error {
-
+	log.Println("EXEC:", name, strings.Join(arg, " "))
 	cmd := exec.Command(name, arg...)
 	return cmd.Run()
 }
