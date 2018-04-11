@@ -58,7 +58,7 @@ func pngcrushCompress(file string) error {
 
 	err = runCommand(pngcrushPath, "-s", "-brute", "-rem", "alla", file, pngcrushFile)
 	if err != nil {
-		return fmt.Errorf("pngcrush: error occured while processing", file, ":", err)
+		return fmt.Errorf("pngcrush: error occured while processing %s: %v", file, err)
 	}
 	outSize := fileSize(pngcrushFile)
 	diffSize := inFileSize - outSize
