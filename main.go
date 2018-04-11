@@ -70,9 +70,11 @@ func pngcrushCompress(file string) error {
 	}
 
 	if diffSize < 0 {
-		fmt.Println("pngcrush: throwing away non-shrunk file", pngcrushFile)
+		if *verbose {
+			fmt.Println("pngcrush: throwing away non-shrunk file", pngcrushFile)
+		}
 		os.Remove(pngcrushFile)
-		return fmt.Errorf("file not shrunk")
+		return nil
 	}
 
 	err = os.Remove(file)
@@ -105,9 +107,11 @@ func optipngCompress(file string) error {
 	}
 
 	if diffSize < 0 {
-		fmt.Println("optipng: throwing away non-shrunk file", optipngFile)
+		if *verbose {
+			fmt.Println("optipng: throwing away non-shrunk file", optipngFile)
+		}
 		os.Remove(optipngFile)
-		return fmt.Errorf("file not shrunk")
+		return nil
 	}
 
 	err = os.Remove(file)
@@ -119,7 +123,6 @@ func optipngCompress(file string) error {
 
 // exists reports whether the named file or directory exists.
 func exists(name string) bool {
-
 	if _, err := os.Stat(name); err != nil {
 		if os.IsNotExist(err) {
 			return false
@@ -159,7 +162,7 @@ func findFreeOutFileName(file string) string {
 }
 
 func runCommand(name string, arg ...string) error {
-	log.Println("EXEC:", name, strings.Join(arg, " "))
+	//log.Println("EXEC:", name, strings.Join(arg, " "))
 	cmd := exec.Command(name, arg...)
 	return cmd.Run()
 }
