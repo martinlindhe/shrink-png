@@ -1,7 +1,5 @@
 # About
 
-[![gorelease](https://dn-gorelease.qbox.me/gorelease-download-blue.svg)](https://gobuild.io/martinlindhe/shrink-png/master)
-
 Tool using pngcrush and optipng to optimize input PNG
 
 
@@ -21,7 +19,7 @@ Windows ([scoop](http://scoop.sh/)):
 
     scoop install pngcrush optipng
 
-Next, install shrink-png
+Next, download shrink-png from Releases, or build it from source:
 
     go get -u github.com/martinlindhe/shrink-png
 
