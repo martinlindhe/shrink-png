@@ -34,10 +34,10 @@ func main() {
 
 	inFileSize := fileSize(*inFile)
 	if err := pngcrushCompress(*inFile); err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	}
 	if err := optipngCompress(*inFile); err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	}
 	outFileSize := fileSize(*inFile)
 
@@ -132,7 +132,6 @@ func exists(name string) bool {
 }
 
 func baseNameWithoutExt(filename string) string {
-
 	s := filepath.Base(filename)
 	n := strings.LastIndexByte(s, '.')
 	if n >= 0 {
@@ -142,7 +141,6 @@ func baseNameWithoutExt(filename string) string {
 }
 
 func findFreeOutFileName(file string) string {
-
 	cnt := 0
 	res := ""
 	ext := path.Ext(file)
@@ -162,13 +160,14 @@ func findFreeOutFileName(file string) string {
 }
 
 func runCommand(name string, arg ...string) error {
-	//log.Println("EXEC:", name, strings.Join(arg, " "))
+	if *verbose {
+		fmt.Println("EXEC:", name, strings.Join(arg, " "))
+	}
 	cmd := exec.Command(name, arg...)
 	return cmd.Run()
 }
 
 func fileSize(filepath string) int64 {
-
 	file, err := os.Open(filepath)
 	defer file.Close()
 
@@ -183,7 +182,6 @@ func fileSize(filepath string) int64 {
 }
 
 func lookPath(file string) (string, error) {
-
 	if runtime.GOOS == "windows" {
 		file += ".exe"
 	}
