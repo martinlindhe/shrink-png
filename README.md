@@ -7,6 +7,10 @@ Tool using pngcrush and optipng to optimize input PNG
 
 First, you need to install `pngcrush` and `optipng`:
 
+Arch:
+
+    sudo pacman -S pngcrush optipng
+
 Debian/Ubuntu:
 
     sudo apt-get install pngcrush optipng
@@ -21,7 +25,7 @@ Windows ([scoop](http://scoop.sh/)):
 
 Next, download shrink-png from Releases, or build it from source:
 
-    go get -u github.com/martinlindhe/shrink-png
+    go install github.com/martinlindhe/shrink-png@latest
 
 
 ### License
