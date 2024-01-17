@@ -43,9 +43,11 @@ func main() {
 
 	diffSize := inFileSize - outFileSize
 	pctShrunk := 100 - ((float64(outFileSize) / float64(inFileSize)) * 100)
-	fmt.Printf("%s: %d -> %d (shrunk by %d bytes, %0.1f%%)",
-		*inFile, inFileSize, outFileSize, diffSize, pctShrunk)
-	fmt.Println()
+	if diffSize > 0 || *verbose {
+		fmt.Printf("%s: %d -> %d (shrunk by %d bytes, %0.1f%%)",
+			*inFile, inFileSize, outFileSize, diffSize, pctShrunk)
+		fmt.Println()
+	}
 }
 
 func pngcrushCompress(file string) error {
