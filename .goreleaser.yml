@@ -1,10 +1,13 @@
-# Build customization
+env:
+  - CGO_ENABLED=0
+
 builds:
-  -
+  - id: shrink-png
     binary: shrink-png
     goos:
-      - windows
+      - linux
       - darwin
+      - windows
     goarch:
       - 386
       - amd64
@@ -12,16 +15,22 @@ builds:
       - goos: darwin
         goarch: 386
 
-# Archive customization
-archive:
-  format: tar.gz
-  format_overrides:
-    - goos: windows
-      format: zip
-  replacements:
-    amd64: 64-bit
-    386: 32-bit
-    darwin: macOS
-  files:
-    - README.md
-    - LICENSE
+archives:
+  - id: all
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: >-
+      {{- .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end -}}
+
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}"
+changelog:
+  sort: asc
